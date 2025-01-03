@@ -1,0 +1,19 @@
+{
+  "name": "youtube-backend",
+  "version": "1.0.0",
+  "description": "This project is for YouTube, featuring a backend with API integration.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "node.js",
+    "express.js",
+    "javascript",
+    "mongodb",
+    "mongoose",
+    "git"
+  ],
+  "author": "Md Riyad",
+  "license": "ISC"
+}
