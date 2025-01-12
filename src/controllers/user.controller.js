@@ -40,6 +40,8 @@ const registerUser = async (req, res) => {
         throw new apiError(400, "email already exist");
       }
     }
+
+    // avatar part
     const avatarLocalPath = req.files?.avatar[0]?.path;
     if (!avatarLocalPath) {
       throw new apiError(400, "avatar file is required");
@@ -48,12 +50,27 @@ const registerUser = async (req, res) => {
     if (avatar.secure_url) {
       fs.unlinkSync(avatarLocalPath);
     }
+
+    //coverImage part
+    let coverImage_url = "";
+    if( req.files?.coverImage?.length > 0){
+        const coverImagePath = req.files.coverImage[0].path;
+        const coverImage = await uploadOnCloudinary(coverImagePath);
+
+        if(coverImage?.secure_url){
+            coverImage_url = coverImage.secure_url;
+            fs.unlinkSync(coverImagePath);
+        }
+    }
+
+
     const user = await User.create({
       fullname,
       email,
       password,
       username: username.toLowerCase(),
       avatar: avatar.secure_url,
+      coverImage: coverImage_url
     });
     console.log("User:", user);
     const createdUser = await User.findById(user._id).select(
