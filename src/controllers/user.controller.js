@@ -242,3 +242,28 @@ export const refreshAccessToken = async (req, res) => {
     });
   }
 };
+
+export const changeCurrentPassword = async (req, res)=>{
+  try {
+    const {oldPassword, newPassword} = req.body;
+    if(!(oldPassword, newPassword)){
+      throw new apiError(400, "oldPassword or newPassword not found");
+    }
+    const user = await User.findById(req.user?._id);
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    user.password = newPassword;
+    await user.save({validBeforeSave: true});
+
+    return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"))
+
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error:true
+    })
+  }
+}
