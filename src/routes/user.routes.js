@@ -4,7 +4,8 @@ import {
   registerUser,
   logout,
   refreshAccessToken,
-  changeCurrentPassword
+  changeCurrentPassword,
+  getUser,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -29,6 +30,7 @@ router.route("/login").post(loginUser);
 
 router.route("/logout").get(authMiddleware, logout);
 router.route("/refresh-token").get(authMiddleware, refreshAccessToken);
-router.route('/forget-password').post(authMiddleware, changeCurrentPassword)
+router.route("/forget-password").post(authMiddleware, changeCurrentPassword);
+router.route("/getUser").get(authMiddleware, getUser);
 
 export default router;

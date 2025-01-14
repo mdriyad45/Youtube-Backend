@@ -275,3 +275,11 @@ export const changeCurrentPassword = async (req, res)=>{
     })
   }
 }
+export const getUser = async (req, res)=>{
+  res.status(200).json({
+    message: 'user get successfully',
+    data: req.user,
+    success: true,
+    error: false
+  })
+}
