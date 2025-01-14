@@ -4,7 +4,26 @@ import { apiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 
-const registerUser = async (req, res) => {
+const generateAccessAndRefreshToken = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+
+    const accessToken = user.generateAccessToken();
+
+    const refreshToken = user.generateRefreshToken();
+    user.refreshToken = refreshToken;
+    await user.save({ validBeforeSave: false });
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    console.log(error);
+    throw new apiError(
+      500,
+      "Something went wrong while generate refresh and access token"
+    );
+  }
+};
+export const registerUser = async (req, res) => {
   try {
     /**
      *get user data form body
@@ -53,16 +72,15 @@ const registerUser = async (req, res) => {
 
     //coverImage part
     let coverImage_url = "";
-    if( req.files?.coverImage?.length > 0){
-        const coverImagePath = req.files.coverImage[0].path;
-        const coverImage = await uploadOnCloudinary(coverImagePath);
+    if (req.files?.coverImage?.length > 0) {
+      const coverImagePath = req.files.coverImage[0].path;
+      const coverImage = await uploadOnCloudinary(coverImagePath);
 
-        if(coverImage?.secure_url){
-            coverImage_url = coverImage.secure_url;
-            fs.unlinkSync(coverImagePath);
-        }
+      if (coverImage?.secure_url) {
+        coverImage_url = coverImage.secure_url;
+        fs.unlinkSync(coverImagePath);
+      }
     }
-
 
     const user = await User.create({
       fullname,
@@ -70,21 +88,21 @@ const registerUser = async (req, res) => {
       password,
       username: username.toLowerCase(),
       avatar: avatar.secure_url,
-      coverImage: coverImage_url
+      coverImage: coverImage_url,
     });
-    console.log("User:", user);
+
     const createdUser = await User.findById(user._id).select(
       "-password -refreshToken"
     );
 
     res.status(201).json({
-        message: 'Created user successfully',
-        data: createdUser,
-        success: true,
-        error: false,
-    })
+      message: "Created user successfully",
+      data: createdUser,
+      success: true,
+      error: false,
+    });
   } catch (error) {
-    console.error(error.message);
+    console.error(error);
     res.status(400).json({
       message: error.message,
       success: false,
@@ -93,4 +111,87 @@ const registerUser = async (req, res) => {
   }
 };
 
-export default registerUser;
+export const loginUser = async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    if (!(username || email)) {
+      throw new apiError(400, "username or email must require");
+    }
+    const user = await User.findOne({
+      $or: [{ email }, { username }],
+    });
+    if (!user) {
+      throw new apiError(400, "user not exist");
+    }
+    const isPasswordValid = await user.isPasswordCorrect(password);
+    if (!isPasswordValid) {
+      throw new apiError(400, "Invalid user credentials");
+    }
+    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(
+      user._id
+    );
+
+    const loggedInUser = await User.findById(user._id).select(
+      "-password -refreshToken"
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json({
+        message: "user logged in successfully",
+        data: { loggedInUser, accessToken, refreshToken },
+        success: true,
+        error: false,
+      });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message || "login failed",
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(
+      req.user_id,
+      {
+        $unset: {
+          refreshToken: 1, // this remove the field from document
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    res
+      .status(200)
+      .clearCookie("accessToken", options)
+      .clearCookie("refreshToken", options)
+      .json({
+        message: "User logged Out successfully",
+        success: true,
+        error: false,
+      });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: true,
+      error: false,
+    });
+  }
+};
