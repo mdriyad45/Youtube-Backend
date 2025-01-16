@@ -1,8 +1,9 @@
+import { error } from "console";
 import { User } from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
-import jwt from 'jsonwebtoken'
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -243,43 +244,110 @@ export const refreshAccessToken = async (req, res) => {
   }
 };
 
-export const changeCurrentPassword = async (req, res)=>{
+export const changeCurrentPassword = async (req, res) => {
   try {
-    const {oldPassword, newPassword} = req.body;
-    
-    if(!(oldPassword, newPassword)){
+    const { oldPassword, newPassword } = req.body;
+
+    if (!(oldPassword, newPassword)) {
       throw new apiError(400, "oldPassword or newPassword not found");
     }
     const user = await User.findById(req.user?._id);
 
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
-    if(!isPasswordCorrect){
+    if (!isPasswordCorrect) {
       throw new apiError(400, "Old password is incorrect");
     }
     user.password = newPassword;
-    await user.save({validBeforeSave: true});
+    await user.save({ validBeforeSave: true });
 
-    return res
-    .status(200)
-    .json({
-      message: 'password change successfully',
+    return res.status(200).json({
+      message: "password change successfully",
       success: true,
-      error: false
-    })
-
+      error: false,
+    });
   } catch (error) {
     res.status(400).json({
       message: error.message,
       success: false,
-      error:true
-    })
+      error: true,
+    });
   }
-}
-export const getUser = async (req, res)=>{
+};
+export const getUser = async (req, res) => {
   res.status(200).json({
-    message: 'user get successfully',
+    message: "user get successfully",
     data: req.user,
     success: true,
-    error: false
-  })
-}
+    error: false,
+  });
+};
+export const updateAccountDetails = async (req, res) => {
+  try {
+    const { name, fullname } = req.body;
+
+    if (!(email, fullname)) {
+      throw new apiError(400, "All fields are required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+      {
+        $set: {
+          fullname,
+          email: email,
+        },
+      },
+      { new: true }
+    ).select("-passwordd -refreshToken");
+
+    res.status(200).json({
+      message: "Account details updated successfully",
+      data: user,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+export const updateUserAvatar = async (req, res) => {
+  try {
+    const avatarLocalPath = req.files?.path;
+    if (!avatarLocalPath) {
+      throw new apiError(400, "Avatar file is missing");
+    }
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!avatar.secure_url) {
+      throw new apiError(400, "Error while uploading on avatar");
+    }
+    if (avatar.secure_url) {
+      fs.unlinkSync(avatarLocalPath);
+    }
+
+    const user = await User.findByIdAndUpdate(
+      {
+        $set: {
+          avatar: avatar.secure_url,
+        },
+      },
+      { new: true }
+    ).select("-password");
+
+    res.status(200).json({
+      messgae: "Avatar image updated successfully",
+      data: user,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
