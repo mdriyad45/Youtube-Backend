@@ -273,6 +273,7 @@ export const changeCurrentPassword = async (req, res) => {
     });
   }
 };
+
 export const getUser = async (req, res) => {
   res.status(200).json({
     message: "user get successfully",
@@ -281,6 +282,7 @@ export const getUser = async (req, res) => {
     error: false,
   });
 };
+
 export const updateAccountDetails = async (req, res) => {
   try {
     const { name, fullname } = req.body;
@@ -313,6 +315,7 @@ export const updateAccountDetails = async (req, res) => {
     });
   }
 };
+
 export const updateUserAvatar = async (req, res) => {
   try {
     const avatarLocalPath = req.file?.path;
@@ -333,7 +336,8 @@ export const updateUserAvatar = async (req, res) => {
       });
     }
 
-    const user = await User.findByIdAndUpdate(req.user?._id,
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
       {
         $set: {
           avatar: updateAvatar.secure_url,
@@ -356,6 +360,7 @@ export const updateUserAvatar = async (req, res) => {
     });
   }
 };
+
 export const updateUserCoverImage = async (req, res) => {
   try {
     const coverImageLocalPath = req.file?.path;
@@ -394,6 +399,38 @@ export const updateUserCoverImage = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+export const deleteUserAccount = async (req, res) => {
+  try {
+    const userId = req.user?._id;
+    const user = await User.findByIdAndDelete(userId);
+    if (!user) {
+      throw new apiError(400, "Error occur when user account is deletting");
+    }
+
+    const avatar = await deleteOnCloudinary(user.avatar, {
+      resource_type: "image",
+    });
+    const coverImage = await deleteOnCloudinary(user.coverImage, {
+      resource_type: "image",
+    });
+
+    if (avatar.error || coverImage.error) {
+      throw new ApiError(500, "Error while deleting on cloudinary");
+    }
+    return res.status(200).json({
+      message: "Account deleted",
+      data: {},
+      success: true,
+      error: false,
+    });
+  } catch (error) {
     res.status(400).json({
       message: error.message,
       success: false,

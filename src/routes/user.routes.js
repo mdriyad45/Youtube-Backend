@@ -8,7 +8,8 @@ import {
   getUser,
   updateAccountDetails,
   updateUserAvatar,
-  updateUserCoverImage
+  updateUserCoverImage,
+  deleteUserAccount,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -35,8 +36,13 @@ router.route("/logout").get(authMiddleware, logout);
 router.route("/refresh-token").get(authMiddleware, refreshAccessToken);
 router.route("/forget-password").post(authMiddleware, changeCurrentPassword);
 router.route("/getUser").get(authMiddleware, getUser);
-router.route("/update-account").post(authMiddleware, updateAccountDetails);
-router.route("/update-avatar").post(authMiddleware,upload.single("avatar"),updateUserAvatar)
-router.route("/update-coverImage").post(authMiddleware,upload.single("coverImage"),updateUserCoverImage)
+router.route("/update-account").patch(authMiddleware, updateAccountDetails);
+router.route("/update-account").get(authMiddleware, deleteUserAccount);
+router
+  .route("/update-avatar")
+  .patch(authMiddleware, upload.single("avatar"), updateUserAvatar);
+router
+  .route("/update-coverImage")
+  .patch(authMiddleware, upload.single("coverImage"), updateUserCoverImage);
 
 export default router;
