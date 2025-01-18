@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 import dotenv from "dotenv";
+import { apiError } from "../utils/apiError.js";
 
 dotenv.config();
 
@@ -25,4 +26,23 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+const deleteOnCloudinary = async (url, option) => {
+  try {
+    if (!url) {
+      throw new apiError(
+        400,
+        "image url is require by deleting cloudinary old image"
+      );
+    }
+    const publicId = url.split("/").pop().split(".")[0];
+    if (!publicId) {
+      throw new apiError(400, "Cloudinary publicId is required");
+    }
+    const res = await cloudinary.uploader.destroy(publicId, option);
+    return res;
+  } catch (error) {
+    return error;
+  }
+};
+
+export { uploadOnCloudinary, deleteOnCloudinary };

@@ -1,7 +1,7 @@
 import { error } from "console";
 import { User } from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import jwt from "jsonwebtoken";
 
@@ -315,23 +315,28 @@ export const updateAccountDetails = async (req, res) => {
 };
 export const updateUserAvatar = async (req, res) => {
   try {
-    const avatarLocalPath = req.files?.path;
+    const avatarLocalPath = req.file?.path;
     if (!avatarLocalPath) {
       throw new apiError(400, "Avatar file is missing");
     }
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
-
-    if (!avatar.secure_url) {
+    const updateAvatar = await uploadOnCloudinary(avatarLocalPath);
+    if (!updateAvatar.secure_url) {
       throw new apiError(400, "Error while uploading on avatar");
     }
-    if (avatar.secure_url) {
+    if (updateAvatar.secure_url) {
       fs.unlinkSync(avatarLocalPath);
+      const { avatar } = await User.findById(req.user?._id).select(
+        "-password -username -email -refreshToken -fullname -coverImage"
+      );
+      const deleteImage = await deleteOnCloudinary(avatar, {
+        resource_type: "image",
+      });
     }
 
-    const user = await User.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(req.user?._id,
       {
         $set: {
-          avatar: avatar.secure_url,
+          avatar: updateAvatar.secure_url,
         },
       },
       { new: true }
@@ -344,6 +349,51 @@ export const updateUserAvatar = async (req, res) => {
       error: false,
     });
   } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+export const updateUserCoverImage = async (req, res) => {
+  try {
+    const coverImageLocalPath = req.file?.path;
+
+    if (!coverImageLocalPath) {
+      throw new apiError(400, "CoverImage file is missing");
+    }
+    const updateCoverImage = await uploadOnCloudinary(coverImageLocalPath);
+    if (!updateCoverImage.secure_url) {
+      throw new apiError(400, "Error while uploading on avatar");
+    }
+    if (updateCoverImage.secure_url) {
+      fs.unlinkSync(coverImageLocalPath);
+      const { coverImage } = await User.findById(req.user?._id).select(
+        "-password -username -email -refreshToken -fullname -avatar"
+      );
+      const deleteImage = await deleteOnCloudinary(coverImage, {
+        resource_type: "image",
+      });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      {
+        $set: {
+          coverImage: updateCoverImage.secure_url,
+        },
+      },
+      { new: true }
+    ).select("-password");
+    res.status(200).json({
+      messgae: "Cover image updated successfully",
+      data: user,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
     res.status(400).json({
       message: error.message,
       success: false,
