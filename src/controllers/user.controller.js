@@ -4,6 +4,7 @@ import { apiError } from "../utils/apiError.js";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken = async (userId) => {
   try {
@@ -406,6 +407,7 @@ export const updateUserCoverImage = async (req, res) => {
     });
   }
 };
+
 export const deleteUserAccount = async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -429,6 +431,142 @@ export const deleteUserAccount = async (req, res) => {
       data: {},
       success: true,
       error: false,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const getUserChannelProfile = async (req, res) => {
+  try {
+    const { username } = req.params;
+    if (!username.trim()) {
+      throw new apiError(400, "username required");
+    }
+    const channel = await User.aggregate([
+      {
+        $match: {
+          username: username?.toLowerCase(),
+        },
+      },
+      {
+        $lookup: {
+          from: "Subscription",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "Subscription",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: {
+              $ifNull: ["$subscribes", []], // Ensure `subscribes` is always an array
+            },
+          },
+          channelSubscribedToCount: {
+            $size: {
+              $ifNull: ["$subscriber", []], // Ensure `subscriber` is always an array for counting
+            },
+          },
+          isSubscribed: {
+            $cond: {
+              if: {
+                $in: [
+                  req.user?._id,
+                  { $ifNull: ["$subscriber", []] }, // Ensure `subscriber` is always an array
+                ],
+              },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+    ]);
+    console.log(channel);
+    res.status(200).json({
+      message: "channel count",
+      data: channel,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const getWatchHistory = async (req, res) => {
+  try {
+    const user = await User.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $lookup: {
+          from: "Video",
+          localField: "watchHistory",
+          foreignField: "_id",
+          as: "watchHistory",
+          pipeline: [
+            {
+              $lookup: {
+                from: "User",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    $project: {
+                      fullName: 1,
+                      username: 1,
+                      avatar: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                owner: {
+                  $first: "$owner",
+                },
+              },
+            },
+          ],
+        },
+      },
+      {
+        $project: {
+          fullname: 1,
+          username: 1,
+          avatar: 1,
+          watchHistory: 1,
+        },
+      },
+    ]);
+    console.log(user);
+    res.status(200).json({
+      message: "Watch history fetched successfully",
+      data: user[0].watchHistory,
     });
   } catch (error) {
     res.status(400).json({
