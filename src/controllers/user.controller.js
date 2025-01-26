@@ -1,4 +1,3 @@
-import { error } from "console";
 import { User } from "../models/user.model.js";
 import { apiError } from "../utils/apiError.js";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
