@@ -6,9 +6,9 @@ export const getSearchVideo = async (req, res) => {
     const { query, autocomplete, category, tags, sortBy, limit } = req.query;
 
     const pipeline = [];
-
+    console.log(query.toString(), autocomplete, sortBy);
     //AutoComplete with fuzzy search
-    if (autocomplete === "true") {
+    if (autocomplete === true) {
       pipeline.push({
         $search: {
           index: "videoSearch",
