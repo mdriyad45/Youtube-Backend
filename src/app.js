@@ -26,6 +26,6 @@ app.use("/api/v1/user", userRouter);
 app.use('/api/v1/video',videoRouter)
 
 
-deleteFilesAfterTimeout(5000);
+//deleteFilesAfterTimeout(5000);
 
 export default app;
