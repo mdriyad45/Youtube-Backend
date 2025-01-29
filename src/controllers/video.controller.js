@@ -1,13 +1,18 @@
-
+import { error } from "console";
 import { Video } from "../models/videos.model.js";
 import { apiError } from "../utils/apiError.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  deleteOnCloudinaryByPublicId,
+  uploadOnCloudinary,
+} from "../utils/cloudinary.js";
 import fs from "fs";
+import { isValidObjectId } from "mongoose";
 // get all videos based on query, sort, pagination, view , duration
 
 export const getSearchVideo = async (req, res) => {
   try {
-    const { query, autocomplete, category, tags, sortBy, limit, skip } = req.query;
+    const { query, autocomplete, category, tags, sortBy, limit, skip } =
+      req.query;
 
     const pipeline = [];
     //AutoComplete with fuzzy search
@@ -161,6 +166,130 @@ export const uploadVideo = async (req, res) => {
     res.status(200).json({
       message: "video upload successfully",
       data: video,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+//like and comment o delete korte hobe pore
+export const deleteVideo = async (req, res) => {
+  try {
+    const videoId = req.params._id;
+
+    if (!isValidObjectId(videoId)) {
+      throw new ApiError(400, "Invalid videoId");
+    }
+    const video = await Video.findByIdAndDelete(videoId);
+
+    if (!video) {
+      throw new apiError(400, "video is not found");
+    }
+    const videoPublicKey = video.videoFile.public_id;
+    const thumbnailPublicKey = video.thumbnailFile.public_id;
+
+    const cloudinaryDeleteVideo = await deleteOnCloudinaryByPublicId(
+      videoPublicKey,
+      { resource_type: "video" }
+    );
+
+    if (!cloudinaryDeleteVideo) {
+      throw new apiError(400, "Error for cloudinary delete video ");
+    }
+
+    const cloudinaryDeleteThumnail = await deleteOnCloudinaryByPublicId(
+      thumbnailPublicKey,
+      { resource_type: "image" }
+    );
+
+    if (!cloudinaryDeleteThumnail) {
+      throw new apiError(400, "Error for cloudinary delete thumnail ");
+    }
+
+    res.status(200).json({
+      message: "video has been deleted",
+      data: video,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+//update video like title, description, category, tag
+export const updateVideo = async (req, res) => {
+  try {
+    const { title, description, category, tags } = req.body;
+    const videoId = req.params._id;
+    const thumbnailLocalPath = req.file?.path;
+
+    if (!isValidObjectId(videoId)) {
+      throw new apiError(400, "video id not found");
+    }
+
+    const video = await Video.findById(videoId);
+    if (!video) {
+      throw new apiError(400, "Video not found");
+    }
+
+    //new thumnail update and old thumnail delete from cloudinary
+    const updateThubnail = await uploadOnCloudinary(thumbnailLocalPath, {
+      resource_type: "image",
+    });
+
+    if (!updateThubnail) {
+      throw new apiError(400, "thumbnail upload error from cloudinary");
+    }
+    console.log(updateThubnail);
+    if (updateThubnail.secure_url) {
+      fs.unlinkSync(thumbnailLocalPath);
+    }
+
+    //old thumnail delete from cloudinary
+
+    const oldThumbnailDelete = await deleteOnCloudinaryByPublicId(
+      video.thumbnailFile.public_id,
+      { resource_type: "image" }
+    );
+
+    if (!oldThumbnailDelete) {
+      throw new apiError(400, "Error for old thumbnail delete from cloudinary");
+    }
+
+    const updatedVideo = await Video.findByIdAndUpdate(
+      videoId,
+      {
+        $set: {
+          title,
+          description,
+          category,
+          tags,
+          thumbnailFile: {
+            secure_url: updateThubnail.secure_url,
+            public_id: updateThubnail.public_id,
+          },
+        },
+      },
+      {
+        new: true,
+      }
+    );
+    res.status(200).json({
+      message: "video updated successfully",
+      data: updatedVideo,
       success: true,
       error: false,
     });

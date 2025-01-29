@@ -45,4 +45,16 @@ const deleteOnCloudinary = async (url, option) => {
   }
 };
 
-export { uploadOnCloudinary, deleteOnCloudinary };
+const deleteOnCloudinaryByPublicId = async (public_id, option) => {
+  try {
+    if (!public_id) {
+      throw new apiError(400, "public id not found");
+    }
+    const res = await cloudinary.uploader.destroy(public_id, option);
+    return res;
+  } catch (error) {
+    return error;
+  }
+};
+
+export { uploadOnCloudinary, deleteOnCloudinary, deleteOnCloudinaryByPublicId };

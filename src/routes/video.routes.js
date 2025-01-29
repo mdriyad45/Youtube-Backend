@@ -2,7 +2,9 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
+  deleteVideo,
   getSearchVideo,
+  updateVideo,
   uploadVideo,
 } from "../controllers/video.controller.js";
 
@@ -23,5 +25,7 @@ router.route("/upload-video").post(
   ]),
   uploadVideo
 );
+router.route('/delete-video/:_id').get(deleteVideo);
+router.route('/update-video/:_id').put(upload.single('thumbnail'),updateVideo)
 
 export default router;
