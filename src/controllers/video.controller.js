@@ -302,3 +302,11 @@ export const updateVideo = async (req, res) => {
     });
   }
 };
+
+export const getVideoById = async (req, res)=>{
+  try {
+    
+  } catch (error) {
+    
+  }
+}
