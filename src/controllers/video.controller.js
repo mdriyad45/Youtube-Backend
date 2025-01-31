@@ -307,8 +307,9 @@ export const updateVideo = async (req, res) => {
 
 export const getVideoById = async (req, res) => {
   try {
-    const videoId = req.params;
+    const videoId = req.params._id;
 
+    console.log(videoId);
     if (!isValidObjectId(videoId)) {
       throw new apiError(400, "videoId Invalid");
     }
@@ -320,7 +321,7 @@ export const getVideoById = async (req, res) => {
 
     const video = await Video.aggregate([
       {
-        $match: { _id: mongoose.Types.ObjectId(videoId) },
+        $match: { _id: new mongoose.Types.ObjectId(videoId) },
       },
       {
         $lookup: {
@@ -333,8 +334,8 @@ export const getVideoById = async (req, res) => {
       {
         $lookup: {
           from: "users",
-          localField: "_id",
-          foreignField: "owner",
+          localField: "owner",
+          foreignField: "_id",
           as: "owner",
           pipeline: [
             {
@@ -344,22 +345,26 @@ export const getVideoById = async (req, res) => {
                 foreignField: "channel",
                 as: "subscribers",
               },
+            },
+            {
               $addFields: {
                 subscriberCount: {
                   $size: {
-                    $ifNull: ["subscribers", []],
+                    $ifNull: ["$subscribers", []],
                   },
                 },
                 isSubscribe: {
                   $cond: {
-                    $if: {
-                      $in: [req?.user?._id, { $ifNull: ["subscribers", []] }],
+                    if: {
+                      $in: [req.user?._id, { $ifNull: ["$subscribers", []] }],
                     },
                     then: true,
                     else: false,
                   },
                 },
               },
+            },
+            {
               $project: {
                 username: 1,
                 "avatar.url": 1,
@@ -372,15 +377,15 @@ export const getVideoById = async (req, res) => {
       },
       {
         $addFields: {
-          likesCount: { $size: likes },
-          owner: {
-            $first: "$owner",
-          },
+          likesCount: { $size: "$likes" },
+          owner: { $first: "$owner" },
           isLike: {
             $cond: {
               if: {
-                $in: [req?.user?._id, { $ifNull: ["$likes.likedBy", []] }],
+                $in: [req.user?._id, { $ifNull: ["$likes.likedBy", []] }],
               },
+              then: true,
+              else: false
             },
           },
         },
@@ -407,7 +412,7 @@ export const getVideoById = async (req, res) => {
 
     await Video.findByIdAndUpdate(videoId, {
       $inc: {
-        view: 1,
+        views: 1,
       },
     });
 

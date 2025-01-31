@@ -4,6 +4,7 @@ import { authMiddleware } from "../middlewares/auth.middleware.js";
 import {
   deleteVideo,
   getSearchVideo,
+  getVideoById,
   updateVideo,
   uploadVideo,
 } from "../controllers/video.controller.js";
@@ -11,7 +12,7 @@ import {
 const router = Router();
 
 //router.use(authMiddleware);
-router.route("/").get(getSearchVideo);
+router.route("/").get(authMiddleware, getSearchVideo);
 router.route("/upload-video").post(
   upload.fields([
     {
@@ -23,9 +24,13 @@ router.route("/upload-video").post(
       maxCount: 1,
     },
   ]),
+  authMiddleware,
   uploadVideo
 );
-router.route('/delete-video/:_id').get(deleteVideo);
-router.route('/update-video/:_id').put(upload.single('thumbnail'),updateVideo)
+router.route("/delete-video/:_id").get(authMiddleware, deleteVideo);
+router
+  .route("/update-video/:_id")
+  .put(upload.single("thumbnail"), authMiddleware, updateVideo);
+router.route("/:_id").get(authMiddleware, getVideoById);
 
 export default router;
