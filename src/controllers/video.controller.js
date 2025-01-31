@@ -7,6 +7,8 @@ import {
 } from "../utils/cloudinary.js";
 import fs from "fs";
 import mongoose, { isValidObjectId } from "mongoose";
+import { Like } from "../models/like.model.js";
+import { User } from "../models/user.model.js";
 // get all videos based on query, sort, pagination, view , duration
 
 export const getSearchVideo = async (req, res) => {
@@ -303,38 +305,131 @@ export const updateVideo = async (req, res) => {
   }
 };
 
-export const getVideoById = async (req, res)=>{
+export const getVideoById = async (req, res) => {
   try {
     const videoId = req.params;
 
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
       throw new apiError(400, "videoId Invalid");
     }
     const userId = req.user?._id;
 
-    if(!isValidObjectId(userId)){
+    if (!isValidObjectId(userId)) {
       throw new apiError(400, "Invalid user");
     }
 
     const video = await Video.aggregate([
       {
-        $match: { _id: mongoose.Types.ObjectId(videoId)}
+        $match: { _id: mongoose.Types.ObjectId(videoId) },
       },
       {
-        $lookup:{
+        $lookup: {
           from: "likes",
           localField: "_id",
           foreignField: "video",
-          as: "likes"
-        }
-      }
-    ])
+          as: "likes",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "owner",
+          as: "owner",
+          pipeline: [
+            {
+              $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers",
+              },
+              $addFields: {
+                subscriberCount: {
+                  $size: {
+                    $ifNull: ["subscribers", []],
+                  },
+                },
+                isSubscribe: {
+                  $cond: {
+                    $if: {
+                      $in: [req?.user?._id, { $ifNull: ["subscribers", []] }],
+                    },
+                    then: true,
+                    else: false,
+                  },
+                },
+              },
+              $project: {
+                username: 1,
+                "avatar.url": 1,
+                subscriberCount: 1,
+                isSubscribe: 1,
+              },
+            },
+          ],
+        },
+      },
+      {
+        $addFields: {
+          likesCount: { $size: likes },
+          owner: {
+            $first: "$owner",
+          },
+          isLike: {
+            $cond: {
+              if: {
+                $in: [req?.user?._id, { $ifNull: ["$likes.likedBy", []] }],
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          "videoFile.secure_url": 1,
+          title: 1,
+          description: 1,
+          views: 1,
+          createdAt: 1,
+          duration: 1,
+          comments: 1,
+          owner: 1,
+          likesCount: 1,
+          isLiked: 1,
+        },
+      },
+    ]);
+
+    if (!video) {
+      throw new apiError(400, "fail to video fetch");
+    }
+
+    await Video.findByIdAndUpdate(videoId, {
+      $inc: {
+        view: 1,
+      },
+    });
+
+    await User.findByIdAndUpdate(req.user?._id, {
+      $addToSet: {
+        watchHistory: videoId,
+      },
+    });
+    console.log(video);
+
+    res.status(200).json({
+      message: "video fetch successfully",
+      data: video[0],
+      success: true,
+      error: false,
+    });
   } catch (error) {
     console.error(error);
     res.status(400).json({
       message: error.message,
       success: false,
-      error: true
-    })
+      error: true,
+    });
   }
-}
+};
