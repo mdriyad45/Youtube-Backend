@@ -6,7 +6,7 @@ import {
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
 import fs from "fs";
-import { isValidObjectId } from "mongoose";
+import mongoose, { isValidObjectId } from "mongoose";
 // get all videos based on query, sort, pagination, view , duration
 
 export const getSearchVideo = async (req, res) => {
@@ -305,8 +305,36 @@ export const updateVideo = async (req, res) => {
 
 export const getVideoById = async (req, res)=>{
   try {
-    
+    const videoId = req.params;
+
+    if(!isValidObjectId(videoId)){
+      throw new apiError(400, "videoId Invalid");
+    }
+    const userId = req.user?._id;
+
+    if(!isValidObjectId(userId)){
+      throw new apiError(400, "Invalid user");
+    }
+
+    const video = await Video.aggregate([
+      {
+        $match: { _id: mongoose.Types.ObjectId(videoId)}
+      },
+      {
+        $lookup:{
+          from: "likes",
+          localField: "_id",
+          foreignField: "video",
+          as: "likes"
+        }
+      }
+    ])
   } catch (error) {
-    
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true
+    })
   }
 }
