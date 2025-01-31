@@ -65,7 +65,10 @@ export const registerUser = async (req, res) => {
     if (!avatarLocalPath) {
       throw new apiError(400, "avatar file is required");
     }
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    const avatar = await uploadOnCloudinary(avatarLocalPath, {
+      resource_type: "image",
+      folder: "avatarImages/",
+    });
     if (avatar.secure_url) {
       fs.unlinkSync(avatarLocalPath);
     }
@@ -74,7 +77,10 @@ export const registerUser = async (req, res) => {
     let coverImage_url = "";
     if (req.files?.coverImage?.length > 0) {
       const coverImagePath = req.files.coverImage[0].path;
-      const coverImage = await uploadOnCloudinary(coverImagePath);
+      const coverImage = await uploadOnCloudinary(coverImagePath, {
+        resource_type: "image",
+        folder: "coverImages/",
+      });
 
       if (coverImage?.secure_url) {
         coverImage_url = coverImage.secure_url;
@@ -322,7 +328,10 @@ export const updateUserAvatar = async (req, res) => {
     if (!avatarLocalPath) {
       throw new apiError(400, "Avatar file is missing");
     }
-    const updateAvatar = await uploadOnCloudinary(avatarLocalPath);
+    const updateAvatar = await uploadOnCloudinary(avatarLocalPath, {
+      resource_type: "image",
+      folder: "avatarImages/",
+    });
     if (!updateAvatar.secure_url) {
       throw new apiError(400, "Error while uploading on avatar");
     }
@@ -368,7 +377,10 @@ export const updateUserCoverImage = async (req, res) => {
     if (!coverImageLocalPath) {
       throw new apiError(400, "CoverImage file is missing");
     }
-    const updateCoverImage = await uploadOnCloudinary(coverImageLocalPath);
+    const updateCoverImage = await uploadOnCloudinary(coverImageLocalPath, {
+      resource_type: "image",
+      folder: "coverImages/",
+    });
     if (!updateCoverImage.secure_url) {
       throw new apiError(400, "Error while uploading on avatar");
     }

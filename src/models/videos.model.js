@@ -6,6 +6,7 @@ const videoSchema = new Schema(
     videoFile: {
       type: {
         secure_url: String,
+        hls_url: String,
         public_id: String,
       },
       require: true,

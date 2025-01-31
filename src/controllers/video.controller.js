@@ -121,11 +121,21 @@ export const uploadVideo = async (req, res) => {
 
     const videoLocalPath = req.files?.video[0]?.path;
     const thumbnailLocalPath = req.files?.thumbnail[0]?.path;
-
+    
     if (!videoLocalPath) {
       throw new apiError(400, "videoLocalPath is required");
     }
-    const uploadVideo = await uploadOnCloudinary(videoLocalPath);
+    const uploadVideo = await uploadOnCloudinary(videoLocalPath, {
+      resource_type: "video",
+      folder: "videos/",
+
+      eager: [
+        {
+          streaming_profile: "hd", //  Generates multi-resolution HLS streaming
+          format: "m3u8",
+        },
+      ],
+    });
 
     if (!uploadVideo) {
       throw new apiError(400, "video file not found");
@@ -137,7 +147,10 @@ export const uploadVideo = async (req, res) => {
     if (!thumbnailLocalPath) {
       throw new apiError(400, "thumbnailLocalPath is required");
     }
-    const uploadThumbnail = await uploadOnCloudinary(thumbnailLocalPath);
+    const uploadThumbnail = await uploadOnCloudinary(thumbnailLocalPath, {
+      resource_type: "image",
+      folder: "images/",
+    });
 
     if (!uploadThumbnail) {
       throw new apiError(400, "thumbnail not found");
@@ -145,7 +158,7 @@ export const uploadVideo = async (req, res) => {
     if (uploadThumbnail.secure_url) {
       fs.unlinkSync(thumbnailLocalPath);
     }
-
+console.log(uploadVideo)
     const video = await Video.create({
       title,
       description,
@@ -154,17 +167,18 @@ export const uploadVideo = async (req, res) => {
       duration: uploadVideo.duration,
       videoFile: {
         secure_url: uploadVideo.secure_url,
-        public_id: uploadVideo.public_id,
+        public_id: uploadVideo.public_id.replace("videos/", ""),
+        hls_url: uploadVideo.secure_url.replace("/upload/", "/upload/hls/"),
       },
       thumbnailFile: {
         secure_url: uploadThumbnail.secure_url,
-        public_id: uploadThumbnail.public_id,
+        public_id: uploadThumbnail.public_id.replace("images/", ""),
       },
       owner: req.user?._id,
       isPublished: false,
     });
 
-    console.log(video);
+    
     res.status(200).json({
       message: "video upload successfully",
       data: video,
@@ -250,6 +264,7 @@ export const updateVideo = async (req, res) => {
     //new thumnail update and old thumnail delete from cloudinary
     const updateThubnail = await uploadOnCloudinary(thumbnailLocalPath, {
       resource_type: "image",
+      folder: "images/",
     });
 
     if (!updateThubnail) {
@@ -263,7 +278,7 @@ export const updateVideo = async (req, res) => {
     //old thumnail delete from cloudinary
 
     const oldThumbnailDelete = await deleteOnCloudinaryByPublicId(
-      video.thumbnailFile.public_id,
+      video.thumbnailFile.public_id.replace("images/", ""),
       { resource_type: "image" }
     );
 
@@ -281,7 +296,7 @@ export const updateVideo = async (req, res) => {
           tags,
           thumbnailFile: {
             secure_url: updateThubnail.secure_url,
-            public_id: updateThubnail.public_id,
+            public_id: updateThubnail.public_id.replace("images/", ""),
           },
         },
       },
