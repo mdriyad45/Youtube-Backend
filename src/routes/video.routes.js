@@ -5,6 +5,7 @@ import {
   deleteVideo,
   getSearchVideo,
   getVideoById,
+  togglePublish,
   updateVideo,
   uploadVideo,
 } from "../controllers/video.controller.js";
@@ -32,5 +33,6 @@ router
   .route("/update-video/:_id")
   .put(upload.single("thumbnail"), authMiddleware, updateVideo);
 router.route("/:_id").get(authMiddleware, getVideoById);
+router.route("/:_id/toggle-publish").patch(authMiddleware, togglePublish);
 
 export default router;

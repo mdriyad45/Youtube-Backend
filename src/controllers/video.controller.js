@@ -385,7 +385,7 @@ export const getVideoById = async (req, res) => {
                 $in: [req.user?._id, { $ifNull: ["$likes.likedBy", []] }],
               },
               then: true,
-              else: false
+              else: false,
             },
           },
         },
@@ -431,6 +431,37 @@ export const getVideoById = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const togglePublish = async (req, res) => {
+  try {
+    const videoId = req.params._id;
+
+    if (!videoId) {
+      throw new apiError(400, "Invalid video id");
+    }
+    const video = await Video.findById(videoId);
+
+    if (!video) {
+      throw new apiError(400, "video not found");
+    }
+
+    video.isPublished = !video.isPublished;
+    await video.save();
+
+    res.status(200).json({
+      message: "Publish status updated",
+      isPublished: video.isPublished,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
     res.status(400).json({
       message: error.message,
       success: false,
