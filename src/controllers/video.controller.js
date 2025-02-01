@@ -135,6 +135,10 @@ export const uploadVideo = async (req, res) => {
           format: "m3u8",
         },
       ],
+      eager_async: true,
+      transformation: [
+    { quality: "auto", fetch_format: "auto" } // Optimize video quality
+  ]
     });
 
     if (!uploadVideo) {
