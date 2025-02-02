@@ -4,6 +4,6 @@ import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
-Router.route("/create-playlist", authMiddleware, createPlaylist);
+Router.route("/create-playlist").post(authMiddleware, createPlaylist);
 
 export default router;
