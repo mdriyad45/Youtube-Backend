@@ -1,3 +1,4 @@
+import { isValidObjectId } from "mongoose";
 import { Playlist } from "../models/playlist.model.js";
 import { apiError } from "../utils/apiError.js";
 
@@ -41,7 +42,7 @@ export const updatePlaylist = async (req, res) => {
     }
     const playlistId = req.params._playlistId;
 
-    if (!playlistId) {
+    if (!isValidObjectId(playlistId)) {
       throw new apiError(400, "playlistId not found");
     }
 
@@ -50,7 +51,7 @@ export const updatePlaylist = async (req, res) => {
     if (!playlist) {
       throw new apiError(400, "playlist not found");
     }
-    if (playlist.owner.tostring() !== req.user?._id.tostring()) {
+    if (playlist.owner.toString() !== req.user?._id.toString()) {
       throw new apiError("only owner can edit the playlist");
     }
 
@@ -80,3 +81,41 @@ export const updatePlaylist = async (req, res) => {
     });
   }
 };
+
+export const deletePlaylist = async ( req, res) =>{
+    try {
+        const playlistId = req.params._playlistId;
+
+        if(!isValidObjectId(playlistId)){
+            throw new apiError(400, "Invalid playlistId")
+        }
+
+        const playlist = await Playlist.findById(playlistId);
+
+        if(!playlist){
+            throw new apiError(400, "playlist not found");
+        }
+
+        if(playlist.owner.toString() !== req.user._id.toString()){
+            throw new apiError(400, "only owner can delete playlist");
+        }
+
+        const deletedPlaylist = await Playlist.findByIdAndDelete(playlistId);
+
+        res.status(400).json({
+            message: "playlist deleted successfully",
+            data: deletePlaylist,
+            success: true,
+            error: false,
+        })
+
+
+    } catch (error) {
+        console.error(error);
+        res.status(400).json({
+            message: error.message,
+            success: false,
+            error: true
+        })
+    }
+}
