@@ -1,5 +1,5 @@
-import { apiError } from "../utils/apiError";
-import { Playlist } from "../models/playlist.model";
+import { Playlist } from "../models/playlist.model.js";
+import { apiError } from "../utils/apiError.js";
 
 export const createPlaylist = async (req, res) => {
   try {
@@ -24,6 +24,7 @@ export const createPlaylist = async (req, res) => {
       error: false,
     });
   } catch (error) {
+    console.error(error);
     res.status(400).json({
       message: error.message,
       success: false,
