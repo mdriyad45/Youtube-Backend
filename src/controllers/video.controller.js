@@ -270,6 +270,7 @@ export const updateVideo = async (req, res) => {
       resource_type: "image",
       folder: "images/",
     });
+    console.log(updateThubnail)
 
     if (!updateThubnail) {
       throw new apiError(400, "thumbnail upload error from cloudinary");
