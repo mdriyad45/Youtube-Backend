@@ -19,13 +19,13 @@ app.use(cookieParser());
 //import routes
 
 import userRouter from "./routes/user.routes.js";
-import videoRouter from "./routes/video.routes.js"
-import { deleteFilesAfterTimeout } from "./utils/deleteFilesAfterTimeout.js";
+import videoRouter from "./routes/video.routes.js";
+import playlist from "./routes/playlist.routers.js";
 
 app.use("/api/v1/user", userRouter);
-app.use('/api/v1/video',videoRouter)
+app.use("/api/v1/video", videoRouter);
+app.use("api/v1/playlist", playlist);
 
 
-//deleteFilesAfterTimeout(5000);
 
 export default app;
