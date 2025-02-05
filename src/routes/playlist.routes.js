@@ -3,7 +3,8 @@ import {
   createPlaylist,
   deletePlaylist,
   updatePlaylist,
-  getPlaylistById
+  addVideoToPlaylist,
+  getPlaylistById,
 } from "../controllers/playlist.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -17,6 +18,9 @@ router
   .route("/delete-playlist/:_playlistId")
   .delete(authMiddleware, deletePlaylist);
 
-router.route('/playlist/:_playlistId').get(authMiddleware, getPlaylistById)
+router.route("/:_playlistId").get(authMiddleware, getPlaylistById);
+router
+  .route("/add-video/:videoId/:playlistId")
+  .patch(authMiddleware, addVideoToPlaylist);
 
 export default router;
