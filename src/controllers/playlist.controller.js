@@ -122,7 +122,6 @@ export const deletePlaylist = async (req, res) => {
 export const addVideoToPlaylist = async (req, res) => {
   try {
     const { videoId, playlistId } = req.params;
-    
 
     if (!isValidObjectId(videoId)) {
       throw new apiError(400, "Invalid videoId");
@@ -135,9 +134,6 @@ export const addVideoToPlaylist = async (req, res) => {
     const playlist = await Playlist.findById(playlistId);
     const videos = await Video.findById(videoId);
 
-    
-    
-
     if (!playlist) {
       throw new apiError(400, "playlist does not exist");
     }
@@ -146,8 +142,6 @@ export const addVideoToPlaylist = async (req, res) => {
       throw new apiError(400, "videos does not exist");
     }
 
- 
-    
     const addVideoToPlaylist = await Playlist.findByIdAndUpdate(
       playlistId,
       {
@@ -248,8 +242,8 @@ export const getPlaylistById = async (req, res) => {
           description: 1,
           createdAt: 1,
           updatedAt: 1,
-          totalViews:1,
-          totalVideos:1,
+          totalViews: 1,
+          totalVideos: 1,
           videos: {
             _id: 1,
             "videoFile.secure_url": 1,
@@ -281,6 +275,70 @@ export const getPlaylistById = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const getUserPlaylist = async (req, res) => {
+  try {
+    const userId = req.params._userId;
+    
+    if (!isValidObjectId(userId)) {
+      throw new apiError(400, "Invalid user id");
+    }
+
+    const playlist = await Playlist.aggregate([
+      {
+        $match: {
+          owner: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "videos",
+          localField: "videos",
+          foreignField: "_id",
+          as: "videos",
+        },
+      },
+      {
+        $addFields: {
+          totalVideos: {
+            $size: "$videos",
+          },
+          totalViews: {
+            $sum: "$videos.views",
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          description: 1,
+          totalVideos: 1,
+          totalViews: 1,
+          updatedAt: 1,
+        },
+      },
+    ]);
+
+    if (!playlist) {
+      throw new apiError(400, "no playlist this user");
+    }
+
+    res.status(200).json({
+      message: "playlist fetch successfully",
+      data: playlist,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(200).json({
       message: error.message,
       success: false,
       error: true,

@@ -5,8 +5,10 @@ import {
   updatePlaylist,
   addVideoToPlaylist,
   getPlaylistById,
+  getUserPlaylist,
 } from "../controllers/playlist.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+
 
 const router = Router();
 
@@ -23,4 +25,5 @@ router
   .route("/add-video/:videoId/:playlistId")
   .patch(authMiddleware, addVideoToPlaylist);
 
+  router.route('/@:_userId/playlist').get(authMiddleware, getUserPlaylist);
 export default router;
