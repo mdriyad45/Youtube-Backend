@@ -285,7 +285,7 @@ export const getPlaylistById = async (req, res) => {
 export const getUserPlaylist = async (req, res) => {
   try {
     const userId = req.params._userId;
-    
+
     if (!isValidObjectId(userId)) {
       throw new apiError(400, "Invalid user id");
     }
