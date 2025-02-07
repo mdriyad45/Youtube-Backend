@@ -1,5 +1,6 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
+import { Like } from "./like.model.js";
 
 const commentSchema = new mongoose.Schema(
   {
@@ -19,12 +20,12 @@ const commentSchema = new mongoose.Schema(
       ref: "User",
     },
     parentComment: {
-      type: mongoose.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Comment",
     },
     replies: [
       {
-        types: mongoose.Types.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "Comment",
       },
     ],
@@ -33,5 +34,28 @@ const commentSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
 commentSchema.plugin(mongooseAggregatePaginate);
+
+commentSchema.post("findOneAndDelete", async (comment, next) => {
+  if (comment) {
+    await Like.findByIdAndDelete(comment._id);
+
+    if (comment.parentComment) {
+      await mongoose
+        .model("Comment")
+        .updateOne(
+          { _id: comment.parentComment },
+          { $pull: { replies: comment._id } }
+        );
+    }
+
+    if (comment.replies.length > 0) {
+      await mongoose
+        .model("Comment")
+        .deleteMany({ _id: { $in: comment.replies } });
+    }
+  }
+  next();
+});
 export const Comment = mongoose.model("comments", commentSchema);
