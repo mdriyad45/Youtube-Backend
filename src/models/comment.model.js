@@ -18,6 +18,16 @@ const commentSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       ref: "User",
     },
+    parentComment: {
+      type: mongoose.Types.ObjectId,
+      ref: "Comment",
+    },
+    replies: [
+      {
+        types: mongoose.Types.ObjectId,
+        ref: "Comment",
+      },
+    ],
   },
   {
     timestamps: true,
