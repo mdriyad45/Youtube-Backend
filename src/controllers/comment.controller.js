@@ -11,7 +11,7 @@ export const addComment = async (req, res) => {
       throw new apiError(400, "Invalid video id");
     }
 
-    if (!content) {
+    if (!commentContent) {
       throw new apiError(400, "commentContent not found");
     }
 
