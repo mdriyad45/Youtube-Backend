@@ -7,7 +7,6 @@ export const addComment = async (req, res) => {
     const videoId = req.params._videoId;
     const { content } = req.body;
     console.log(content);
-    
 
     if (!isValidObjectId(videoId)) {
       throw new apiError(400, "Invalid video id");
@@ -65,6 +64,57 @@ export const deleteComment = async (req, res) => {
     res.status(200).json({
       message: "Comment delete sucessfully",
       data: {},
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
+
+export const addToReply = async (req, res) => {
+  try {
+    const { _parentCommentId } = req.params;
+    const content = req.body;
+
+    if (!isValidObjectId(_parentCommentId)) {
+      throw new apiError(400, "Invalid parent comment id");
+    }
+
+    if (!content) {
+      throw new apiError(400, "reply comment must require");
+    }
+
+    const parentComment = await Comment.findById(_parentCommentId);
+
+    console.log("parentComment: ", parentComment);
+    console.log("..................................");
+
+    if (!parentComment) {
+      throw new apiError(400, "parent comment not found");
+    }
+
+    const reply = new Comment({
+      content,
+      parentComment: _parentCommentId,
+      video: parentComment.video,
+      owner: req.user?._id,
+    });
+    await reply.save();
+
+    console.log("Reply: ", reply);
+
+    parentComment.replies.push(reply._id);
+    await parentComment.save();
+
+    res.status(200).json({
+      message: "added reply comment sucessfully",
+      data: reply,
       success: true,
       error: false,
     });
