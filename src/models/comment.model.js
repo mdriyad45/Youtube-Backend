@@ -5,7 +5,8 @@ import { Like } from "./like.model.js";
 const commentSchema = new mongoose.Schema(
   {
     content: {
-      tyep: String,
+      type: String,
+      require: true,
     },
     video: {
       type: mongoose.Types.ObjectId,
