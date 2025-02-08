@@ -36,7 +36,7 @@ export const addComment = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(200).json({
+    res.status(400).json({
       message: error.message,
       success: false,
       error: true,

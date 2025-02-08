@@ -1,32 +1,33 @@
-import mongoose from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 import { Like } from "./like.model.js";
 
-const commentSchema = new mongoose.Schema(
+const commentSchema = new Schema(
   {
     content: {
       type: String,
       require: true,
     },
     video: {
-      type: mongoose.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Video",
     },
     tweet: {
-      type: mongoose.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Tweet",
     },
     owner: {
-      type: mongoose.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "User",
     },
     parentComment: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: Schema.Types.ObjectId,
       ref: "Comment",
+      //default: null,
     },
     replies: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "Comment",
       },
     ],
