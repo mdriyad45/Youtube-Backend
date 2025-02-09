@@ -127,3 +127,15 @@ export const addToReply = async (req, res) => {
     });
   }
 };
+
+export const updateComment = async (req, res)=>{
+  try {
+    const {_commentId} = req.params;
+
+    if(!isValidObjectId(_commentId)){
+      throw new apiError(400, "Invalid comment id");
+    }
+  } catch (error) {
+    
+  }
+}
