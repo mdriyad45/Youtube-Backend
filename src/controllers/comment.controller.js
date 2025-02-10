@@ -128,14 +128,40 @@ export const addToReply = async (req, res) => {
   }
 };
 
-export const updateComment = async (req, res)=>{
+export const updateComment = async (req, res) => {
   try {
-    const {_commentId} = req.params;
+    const { _commentId } = req.params;
+    const content = req.body;
 
-    if(!isValidObjectId(_commentId)){
+    if (!isValidObjectId(_commentId)) {
       throw new apiError(400, "Invalid comment id");
     }
+    if (!content) {
+      throw new apiError(400, "content must require");
+    }
+
+    const updateComment = await Comment.findByIdAndUpdate(_commentId, {
+      $set: {
+        content,
+      },
+    });
+
+    if (!updateComment) {
+      throw new apiError(400, "comment does not exist");
+    }
+
+    res.status(200).json({
+      message: "comment update successfully",
+      data: updateComment,
+      success: true,
+      error: false,
+    });
   } catch (error) {
-    
+    console.error(error),
+      res.status(400).json({
+        message: error.message,
+        success: false,
+        error: true,
+      });
   }
-}
+};
