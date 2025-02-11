@@ -77,6 +77,55 @@ export const deleteComment = async (req, res) => {
   }
 };
 
+export const updateComment = async (req, res) => {
+  try {
+    const { _commentId } = req.params;
+    const { content } = req.body;
+
+    if (!isValidObjectId(_commentId)) {
+      throw new apiError(400, "Invalid comment id");
+    }
+    if (!content) {
+      throw new apiError(400, "content must require");
+    }
+
+    const updateComment = await Comment.findOneAndUpdate(
+      {
+        $and: [{ _id: _commentId }, { owner: req.user?._id }],
+      },
+      {
+        $set: {
+          content,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    if (!updateComment) {
+      throw new apiError(
+        400,
+        "comment not found or you are not the owner of the comment"
+      );
+    }
+
+    res.status(200).json({
+      message: "comment update successfully",
+      data: updateComment,
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error),
+      res.status(400).json({
+        message: error.message,
+        success: false,
+        error: true,
+      });
+  }
+};
+
 export const addToReply = async (req, res) => {
   try {
     const { _parentCommentId } = req.params;
@@ -128,21 +177,21 @@ export const addToReply = async (req, res) => {
   }
 };
 
-export const updateComment = async (req, res) => {
+export const updateReply = async (req, res) => {
   try {
-    const { _commentId } = req.params;
+    const { _replyId } = req.params;
     const { content } = req.body;
-    console.log(content);
-    if (!isValidObjectId(_commentId)) {
-      throw new apiError(400, "Invalid comment id");
+
+    if (!isValidObjectId(_replyId)) {
+      throw new apiError(400, "Invalid reply comment id");
     }
     if (!content) {
       throw new apiError(400, "content must require");
     }
 
-    const updateComment = await Comment.findOneAndUpdate(
+    const updateReply = await Comment.findOneAndUpdate(
       {
-        $and: [{ _id: _commentId }, { owner: req.user?._id }],
+        $and: [{ _id: _replyId }, { owner: req.user?._id }],
       },
       {
         $set: {
@@ -153,8 +202,7 @@ export const updateComment = async (req, res) => {
         new: true,
       }
     );
-
-    if (!updateComment) {
+    if (!updateReply) {
       throw new apiError(
         400,
         "comment not found or you are not the owner of the comment"
@@ -174,5 +222,39 @@ export const updateComment = async (req, res) => {
         success: false,
         error: true,
       });
+  }
+};
+
+export const deleteReply = async (req, res) => {
+  try {
+    const { _replyId } = req.params;
+
+    console.log(_replyId, req.user?._id);
+
+    if (!isValidObjectId(_replyId)) {
+      throw new apiError(400, "Invalid reply comment id");
+    }
+
+    const deleteReply = await Comment.findOneAndDelete({
+      $and: [{ _id: _replyId }, { owner: req.user?._id }],
+    });
+    console.log(deleteReply)
+    if (!deleteReply) {
+      throw new apiError(400, "only owner can delete by reply or reply not found");
+    }
+
+    res.status(200).json({
+      message: "reply delete sucessfully",
+      data: {},
+      success: true,
+      error: false,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
   }
 };
