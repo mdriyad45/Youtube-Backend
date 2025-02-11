@@ -80,7 +80,7 @@ export const deleteComment = async (req, res) => {
 export const addToReply = async (req, res) => {
   try {
     const { _parentCommentId } = req.params;
-    const content = req.body;
+    const { content } = req.body;
 
     if (!isValidObjectId(_parentCommentId)) {
       throw new apiError(400, "Invalid parent comment id");
@@ -131,8 +131,8 @@ export const addToReply = async (req, res) => {
 export const updateComment = async (req, res) => {
   try {
     const { _commentId } = req.params;
-    const content = req.body;
-
+    const { content } = req.body;
+    console.log(content);
     if (!isValidObjectId(_commentId)) {
       throw new apiError(400, "Invalid comment id");
     }
@@ -140,14 +140,25 @@ export const updateComment = async (req, res) => {
       throw new apiError(400, "content must require");
     }
 
-    const updateComment = await Comment.findByIdAndUpdate(_commentId, {
-      $set: {
-        content,
+    const updateComment = await Comment.findOneAndUpdate(
+      {
+        $and: [{ _id: _commentId }, { owner: req.user?._id }],
       },
-    });
+      {
+        $set: {
+          content,
+        },
+      },
+      {
+        new: true,
+      }
+    );
 
     if (!updateComment) {
-      throw new apiError(400, "comment does not exist");
+      throw new apiError(
+        400,
+        "comment not found or you are not the owner of the comment"
+      );
     }
 
     res.status(200).json({
