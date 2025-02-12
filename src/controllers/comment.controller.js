@@ -258,3 +258,185 @@ export const deleteReply = async (req, res) => {
     });
   }
 };
+
+export const getVideoComments = async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    const { page = 1, limit = 10, sortType = "asc" } = req.query;
+  
+    const sortTypeArr = ["asc", "dsc"];
+  
+    if (!sortTypeArr.includes(sortType)) {
+      throw new apiError(400, "Please send valid fields for sortType");
+    }
+  
+    if (!mongoose.isValidObjectId(videoId)) {
+      throw new apiError(400, "Invalid VideoId");
+    }
+  
+    let userID;
+    try {
+      const token =
+        req.signedCookies?.accessToken ||
+        req.header("Authorization")?.replace("Bearer ", "");
+      const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      if (decodedToken) {
+        const user = await User.findById(decodedToken?._id);
+        userID = user._id;
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  
+    const aggregateComment = Comment.aggregate([
+      {
+        $match: {
+          video: videoId ? new mongoose.Types.ObjectId(videoId) : null,
+          parentComment: { $exists: false },
+        },
+      },
+      {
+        $lookup: {
+          from: "comments",
+          let: { mainCommentId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ["$parentComment", "$$mainCommentId"] },
+              },
+            },
+            {
+              $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "comment",
+                as: "likes",
+              },
+            },
+            {
+              $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                  {
+                    $project: {
+                      fullName: 1,
+                      username: 1,
+                      avatar: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              $addFields: {
+                likesOnComment: { $size: "$likes" },
+                owner: { $first: "$owner" },
+                isLiked: {
+                  $cond: {
+                    if: { $in: [userID, "$likes.likedBy"] },
+                    then: true,
+                    else: false,
+                  },
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                content: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1,
+                likesOnComment: 1,
+                isLiked: 1,
+              },
+            },
+          ],
+          as: "replies",
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "comment",
+          as: "likes",
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "owner",
+          foreignField: "_id",
+          as: "owner",
+        },
+      },
+  
+      {
+        $addFields: {
+          owner: { $arrayElemAt: ["$owner", 0] },
+          likesOnComment: { $size: "$likes" },
+          isLiked: {
+            $cond: {
+              if: { $in: [userID, "$likes.likedBy"] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          content: 1,
+          owner: {
+            _id: 1,
+            username: 1,
+            fullName: 1,
+            avatar: 1,
+          },
+          createdAt: 1,
+          updatedAt: 1,
+          likesOnComment: 1,
+          replies: 1,
+          isLiked: 1,
+        },
+      },
+      {
+        $sort: {
+          createdAt: sortType === "dsc" ? -1 : 1,
+        },
+      },
+    ]);
+  
+    const comments = await Comment.aggregatePaginate(aggregateComment, {
+      page,
+      limit,
+      customLabels: {
+        totalDocs: "totalComments",
+        docs: "comments",
+      },
+    });
+  
+    if (comments.totalComments === 0) {
+      throw new apiError(404, "Video not found or no comments on the video yet");
+    }
+    res.status(200).json({
+      message: "All comments are fetched",
+      data: comments,
+      success: true,
+      error: false,
+    });
+    
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({
+      message: error.message,
+      success: false,
+      error: true,
+    });
+  }
+};
