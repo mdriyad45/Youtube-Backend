@@ -428,7 +428,7 @@ export const getVideoComments = async (req, res) => {
       message: "All comments are fetched",
       data: comments,
       success: true,
-      error: false,
+      
     });
     
   } catch (error) {
