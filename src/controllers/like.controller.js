@@ -2,7 +2,7 @@ import { isValidObjectId } from "mongoose";
 import { Like } from "../models/like.model";
 import { apiError } from "../utils/apiError";
 
-const videoLike = async (req, res) => {
+export const videoLike = async (req, res) => {
   try {
     const { _videoId } = req.params;
     const userId = req.user?._id;
@@ -44,7 +44,7 @@ const videoLike = async (req, res) => {
   }
 };
 
-const commentLike = async (req, res) => {
+export const commentLike = async (req, res) => {
   try {
     const { _commentId } = req.params;
     const userId = req.user?._id;
@@ -86,7 +86,7 @@ const commentLike = async (req, res) => {
   }
 };
 
-const postLike = async (req, res) => {
+export const postLike = async (req, res) => {
   try {
     const { _postId } = req.params;
     const userId = req.user?._id;
@@ -128,7 +128,7 @@ const postLike = async (req, res) => {
   }
 };
 
-const getLikedVideos = async (req, res) => {
+export const getLikedVideos = async (req, res) => {
   try {
     const videos = await Like.aggregate([
       {
