@@ -5,6 +5,7 @@ import {
   addToReply,
   deleteComment,
   deleteReply,
+  getVideoComment,
   updateComment,
   updateReply,
 } from "../controllers/comment.controller.js";
@@ -12,12 +13,13 @@ import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
-router.use(authMiddleware, upload.none());
-router.route("/:_videoId").post(addComment);
-router.route("/:_commentId").delete(deleteComment);
-router.route("/reply-comment/:_parentCommentId").post(addToReply);
-router.route("/update-comment/:_commentId").patch(updateComment);
-router.route("/reply/:_replyId").patch(updateReply);
-router.route("/reply/:_replyId").delete(deleteReply);
+//router.use(authMiddleware, upload.none());
+router.route("/:_videoId").post(authMiddleware,addComment);
+router.route("/:_commentId").delete(authMiddleware,deleteComment);
+router.route("/reply-comment/:_parentCommentId").post(authMiddleware,addToReply);
+router.route("/update-comment/:_commentId").patch(authMiddleware,updateComment);
+router.route("/reply/:_replyId").patch(authMiddleware,updateReply);
+router.route("/reply/:_replyId").delete(authMiddleware,deleteReply);
+router.route("/reply/:videoId").get(getVideoComment);
 
 export default router;
