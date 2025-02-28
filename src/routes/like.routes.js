@@ -9,4 +9,4 @@ router.route("/:_commentId").post(authMiddleware, commentLike)
 router.route("/:_postId").post(authMiddleware, postLike)
 router.route("/videos").get(getLikedVideos)
 
-export default router;
+export default router;   
