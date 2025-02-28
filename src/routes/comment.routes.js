@@ -20,6 +20,6 @@ router.route("/reply-comment/:_parentCommentId").post(authMiddleware,addToReply)
 router.route("/update-comment/:_commentId").patch(authMiddleware,updateComment);
 router.route("/reply/:_replyId").patch(authMiddleware,updateReply);
 router.route("/reply/:_replyId").delete(authMiddleware,deleteReply);
-router.route("/reply/:videoId").get(getVideoComment);
+router.route("/:videoId").get(getVideoComment);
 
 export default router;

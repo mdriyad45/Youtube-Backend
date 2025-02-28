@@ -285,7 +285,7 @@ export const getVideoComment = async (req, res) => {
       {
         $match: {
           video: videoId ? new mongoose.Types.ObjectId(videoId) : null,
-          parentComment: { $exist: false }, // only top level comment match,  no match to parentComment.if reply comment does exist then parent comment exist
+          parentComment: { $exists: false }, // only top level comment match,  no match to parentComment.if reply comment does exist then parent comment exist
         },
       },
       {
@@ -324,7 +324,7 @@ export const getVideoComment = async (req, res) => {
               },
             },
             {
-              $addField: {
+              $addFields: {
                 likesOnComment: { $size: "$likes" },
                 owner: { $first: "$owner" },
                 isLiked: {
@@ -373,15 +373,15 @@ export const getVideoComment = async (req, res) => {
         },
       },
       {
-        $addField: {
+        $addFields: {
           owner: { $arrayElemAt: ["$owner", 0] },
           likesOnComment: { $size: "$likes" },
           isLiked: {
             $cond: {
               if: {
                 $and: [
-                  { $ne: [userID, null] },
-                  { $in: [userID, "$likes.likedBy"] },
+                  { $ne: [userId, null] },
+                  { $in: [userId, "$likes.likedBy"] },
                 ],
               },
               then: true,
