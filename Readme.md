@@ -2,6 +2,9 @@
 
 A comprehensive backend API for a YouTube-like video sharing platform built with Node.js, Express.js, and MongoDB. This project provides a complete set of features including user authentication, video management, social interactions, and advanced search capabilities.
 
+## Postman Documentation
+https://documenter.getpostman.com/view/38573702/2sB2qgdy9v
+
 ## 📋 Table of Contents
 
 - [🎥 YouTube Backend API](#-youtube-backend-api)
@@ -25,7 +28,6 @@ A comprehensive backend API for a YouTube-like video sharing platform built with
   - [📤 File Upload & Storage](#-file-upload--storage)
   - [🔍 Search Functionality](#-search-functionality)
   - [🛡️ Security Features](#️-security-features)
-  - [🚀 Deployment](#-deployment)
   - [🤝 Contributing](#-contributing)
   - [📄 License](#-license)
   - [👥 Authors](#-authors)
@@ -145,7 +147,7 @@ Before running this project, make sure you have the following installed:
 
 1. **Clone the repository**
    \`\`\`bash
-   git clone https://github.com/your-username/youtube-backend.git
+   git clone https://github.com/mdriyad45/youtube-backend.git
    cd youtube-backend
    \`\`\`
 
@@ -374,28 +376,6 @@ Most endpoints require authentication. Include the access token in:
 - **Password Security**: bcrypt hashing with salt
 - **File Upload Security**: Type and size validation
 
-## 🚀 Deployment
-
-### Using Docker
-\`\`\`bash
-# Build the image
-docker build -t youtube-backend .
-
-# Run the container
-docker run -p 4000:4000 --env-file .env youtube-backend
-\`\`\`
-
-### Using PM2 (Production)
-\`\`\`bash
-# Install PM2 globally
-npm install -g pm2
-
-# Start the application
-pm2 start src/index.js --name "youtube-backend"
-
-# Monitor the application
-pm2 monit
-\`\`\`
 
 ### Environment Setup
 1. Set up MongoDB Atlas or local MongoDB instance
