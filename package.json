@@ -2,11 +2,13 @@
   "name": "youtube-backend",
   "version": "1.0.0",
   "description": "This project is for YouTube, featuring a backend with API integration.",
-  "main": "index.js",
+  "main": "src/index.js",
   "type": "module",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "start": "node src/index.js"
+    "start": "node src/index.js",
+    "build": "echo 'No build step required'",
+    "vercel-build": "echo 'Build completed'"
   },
   "keywords": [
     "node.js",
@@ -35,5 +37,8 @@
   "devDependencies": {
     "nodemon": "^3.1.9",
     "prettier": "^3.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
