@@ -38,5 +38,8 @@ app.use("/api/v1/video", videoRouter);
 app.use("/api/v1/playlist", playlist);
 app.use("/api/v1/comment/", comment);
 app.use("/api/v1/like/", like);
+app.use('/', (req, res)=>{
+  res.send("Welcome to youtube Api");
+})
 
 export default app;
